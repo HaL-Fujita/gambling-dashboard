@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ギャンブル収支管理ダッシュボード</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #222535;
+      --border: #2e3247;
+      --text: #e8eaf6;
+      --text-sub: #8b90b0;
+      --primary: #4f8ef7;
+      --primary-light: #7ab3ff;
+      --green: #34d399;
+      --red: #f87171;
+      --yellow: #fbbf24;
+      --purple: #a78bfa;
+      --cyan: #22d3ee;
+      --orange: #fb923c;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+    }
+
+    /* ---- HEADER ---- */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--primary), var(--purple));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .logo-text { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+    .logo-sub { font-size: 11px; color: var(--text-sub); margin-top: 1px; }
+    .header-right { display: flex; align-items: center; gap: 16px; }
+    .period-badge {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+    .period-badge span { color: var(--text); font-weight: 600; }
+    .updated { font-size: 11px; color: var(--text-sub); }
+
+    /* ---- MAIN LAYOUT ---- */
+    main { padding: 24px; max-width: 1440px; margin: 0 auto; }
+
+    /* ---- GRID ---- */
+    .grid { display: grid; gap: 16px; }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3-1 { grid-template-columns: 3fr 1fr; }
+    .grid-2-1 { grid-template-columns: 2fr 1fr; }
+
+    /* ---- CARD ---- */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .card-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-sub);
+      margin-bottom: 14px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .card-title .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+    }
+
+    /* ---- KPI CARDS ---- */
+    .kpi { padding: 18px 20px; }
+    .kpi-label { font-size: 11px; color: var(--text-sub); margin-bottom: 8px; }
+    .kpi-value { font-size: 28px; font-weight: 700; letter-spacing: -1px; line-height: 1; }
+    .kpi-sub { margin-top: 8px; display: flex; align-items: center; gap: 6px; }
+    .kpi-badge {
+      font-size: 11px; font-weight: 600;
+      padding: 2px 7px; border-radius: 4px;
+    }
+    .badge-up { background: rgba(52,211,153,0.15); color: var(--green); }
+    .badge-down { background: rgba(248,113,113,0.15); color: var(--red); }
+    .badge-neutral { background: rgba(139,144,176,0.15); color: var(--text-sub); }
+    .kpi-sub-text { font-size: 11px; color: var(--text-sub); }
+
+    .kpi-positive .kpi-value { color: var(--green); }
+    .kpi-negative .kpi-value { color: var(--red); }
+    .kpi-primary .kpi-value { color: var(--primary-light); }
+
+    /* ---- SPARKLINE ---- */
+    .sparkline-wrap { height: 40px; margin-top: 10px; }
+
+    /* ---- SECTION TITLE ---- */
+    .section-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-sub);
+      letter-spacing: 0.5px;
+      margin: 24px 0 12px;
+      padding-left: 2px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ---- CHART CONTAINER ---- */
+    .chart-wrap { position: relative; }
+    canvas { max-width: 100%; }
+
+    /* ---- ROI GAUGE ---- */
+    .gauge-wrap {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 10px 0;
+    }
+    .gauge-value { font-size: 36px; font-weight: 700; margin: 8px 0 4px; }
+    .gauge-label { font-size: 11px; color: var(--text-sub); }
+    .gauge-bar {
+      width: 100%; height: 8px;
+      background: var(--surface2);
+      border-radius: 4px;
+      margin-top: 12px;
+      overflow: hidden;
+    }
+    .gauge-fill {
+      height: 100%; border-radius: 4px;
+      background: linear-gradient(90deg, var(--red) 0%, var(--yellow) 50%, var(--green) 100%);
+    }
+
+    /* ---- GAME TABLE ---- */
+    .game-table { width: 100%; border-collapse: collapse; }
+    .game-table th {
+      text-align: left; font-size: 10px; font-weight: 600;
+      color: var(--text-sub); letter-spacing: 0.5px;
+      padding: 6px 10px; border-bottom: 1px solid var(--border);
+    }
+    .game-table td { padding: 9px 10px; border-bottom: 1px solid rgba(46,50,71,0.5); }
+    .game-table tr:last-child td { border-bottom: none; }
+    .game-icon { font-size: 16px; margin-right: 6px; }
+    .game-name { font-weight: 600; font-size: 13px; }
+    .game-sub { font-size: 10px; color: var(--text-sub); }
+    .text-right { text-align: right; }
+    .text-green { color: var(--green); font-weight: 600; }
+    .text-red { color: var(--red); font-weight: 600; }
+    .text-yellow { color: var(--yellow); font-weight: 600; }
+
+    /* ---- WIN RATE BAR ---- */
+    .win-bar-wrap { width: 80px; }
+    .win-bar {
+      height: 4px; border-radius: 2px;
+      background: var(--surface2); overflow: hidden; margin-top: 4px;
+    }
+    .win-bar-fill { height: 100%; border-radius: 2px; }
+
+    /* ---- CALENDAR HEATMAP ---- */
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+      margin-top: 6px;
+    }
+    .cal-day {
+      aspect-ratio: 1;
+      border-radius: 3px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 600;
+      cursor: default;
+    }
+    .cal-day.empty { background: transparent; }
+    .cal-day.win { background: rgba(52,211,153,0.25); color: var(--green); }
+    .cal-day.loss { background: rgba(248,113,113,0.2); color: var(--red); }
+    .cal-day.break-even { background: rgba(139,144,176,0.15); color: var(--text-sub); }
+    .cal-day.big-win { background: rgba(52,211,153,0.55); color: #fff; }
+    .cal-day.big-loss { background: rgba(248,113,113,0.5); color: #fff; }
+    .cal-day-label {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px;
+      margin-bottom: 3px;
+    }
+    .cal-day-label span { text-align: center; font-size: 9px; color: var(--text-sub); }
+
+    /* ---- STAT LIST ---- */
+    .stat-list { display: flex; flex-direction: column; gap: 12px; }
+    .stat-item { display: flex; align-items: center; justify-content: space-between; }
+    .stat-item-label { font-size: 12px; color: var(--text-sub); }
+    .stat-item-value { font-size: 13px; font-weight: 600; }
+
+    /* ---- SESSIONS TABLE ---- */
+    .sessions-table { width: 100%; border-collapse: collapse; }
+    .sessions-table th {
+      text-align: left; font-size: 10px; font-weight: 600;
+      color: var(--text-sub); letter-spacing: 0.5px;
+      padding: 6px 10px; border-bottom: 1px solid var(--border);
+    }
+    .sessions-table td { padding: 10px; border-bottom: 1px solid rgba(46,50,71,0.4); font-size: 12px; }
+    .sessions-table tr:last-child td { border-bottom: none; }
+    .tag {
+      font-size: 10px; font-weight: 600; padding: 2px 8px;
+      border-radius: 4px; display: inline-block;
+    }
+    .tag-horse { background: rgba(79,142,247,0.15); color: var(--primary-light); }
+    .tag-pachinko { background: rgba(167,139,250,0.15); color: var(--purple); }
+    .tag-casino { background: rgba(251,191,36,0.15); color: var(--yellow); }
+    .tag-sports { background: rgba(34,211,238,0.15); color: var(--cyan); }
+    .tag-poker { background: rgba(251,146,60,0.15); color: var(--orange); }
+
+    /* ---- FOOTER ---- */
+    footer {
+      text-align: center; padding: 24px;
+      font-size: 11px; color: var(--text-sub);
+      border-top: 1px solid var(--border);
+      margin-top: 8px;
+    }
+
+    /* ---- RESPONSIVE ---- */
+    @media (max-width: 1200px) {
+      .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) {
+      .grid-4, .grid-3, .grid-2, .grid-3-1, .grid-2-1 { grid-template-columns: 1fr; }
+      main { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🎰</div>
+    <div>
+      <div class="logo-text">Gamble Analytics</div>
+      <div class="logo-sub">個人収支管理ダッシュボード</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="period-badge">集計期間 <span>2024年1月 〜 2024年12月</span></div>
+    <div class="updated">最終更新: 2024/12/31 23:59</div>
+  </div>
+</header>
+
+<main>
+
+  <!-- KPI ROW -->
+  <div class="grid grid-4" style="margin-bottom:0">
+
+    <div class="card kpi kpi-primary">
+      <div class="kpi-label">総投資額</div>
+      <div class="kpi-value">¥2,340,000</div>
+      <div class="kpi-sub">
+        <span class="kpi-badge badge-neutral">YTD</span>
+        <span class="kpi-sub-text">セッション数: 187回</span>
+      </div>
+      <div class="sparkline-wrap"><canvas id="spark1"></canvas></div>
+    </div>
+
+    <div class="card kpi kpi-positive">
+      <div class="kpi-label">総回収額</div>
+      <div class="kpi-value">¥2,598,500</div>
+      <div class="kpi-sub">
+        <span class="kpi-badge badge-up">↑ +11.0%</span>
+        <span class="kpi-sub-text">vs 前年</span>
+      </div>
+      <div class="sparkline-wrap"><canvas id="spark2"></canvas></div>
+    </div>
+
+    <div class="card kpi kpi-positive">
+      <div class="kpi-label">純利益</div>
+      <div class="kpi-value">¥258,500</div>
+      <div class="kpi-sub">
+        <span class="kpi-badge badge-up">↑ +3回連続プラス月</span>
+      </div>
+      <div class="sparkline-wrap"><canvas id="spark3"></canvas></div>
+    </div>
+
+    <div class="card kpi">
+      <div class="kpi-label">ROI（回収率）</div>
+      <div class="kpi-value" style="color: var(--yellow)">111.1%</div>
+      <div class="kpi-sub">
+        <span class="kpi-badge badge-up">↑ 黒字</span>
+        <span class="kpi-sub-text">目標: 105%超</span>
+      </div>
+      <div class="sparkline-wrap"><canvas id="spark4"></canvas></div>
+    </div>
+
+  </div>
+
+  <!-- ROW 2: Monthly P&L + ROI Gauge + Win Rate -->
+  <div class="section-title">月次推移 & 内訳</div>
+  <div class="grid grid-3-1">
+
+    <div class="card">
+      <div class="card-title"><div class="dot" style="background:var(--primary)"></div>月次収支推移（円）</div>
+      <div class="chart-wrap" style="height:240px">
+        <canvas id="monthlyChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><div class="dot" style="background:var(--yellow)"></div>年間ROI</div>
+      <div class="gauge-wrap">
+        <canvas id="donutROI" width="160" height="160"></canvas>
+        <div class="gauge-value" style="color:var(--yellow)">111.1%</div>
+        <div class="gauge-label">回収率（100%以上 = 黒字）</div>
+        <div style="width:100%;margin-top:16px">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-sub);margin-bottom:4px">
+            <span>80%</span><span>100%</span><span>130%</span>
+          </div>
+          <div class="gauge-bar">
+            <div class="gauge-fill" style="width: 63%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ROW 3: Game breakdown + Cumulative -->
+  <div class="section-title">種目別分析</div>
+  <div class="grid grid-2">
+
+    <div class="card">
+      <div class="card-title"><div class="dot" style="background:var(--purple)"></div>種目別収支ランキング</div>
+      <table class="game-table">
+        <thead>
+          <tr>
+            <th>種目</th>
+            <th class="text-right">投資額</th>
+            <th class="text-right">回収額</th>
+            <th class="text-right">収支</th>
+            <th class="text-right">勝率</th>
+            <th class="text-right">ROI</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="game-icon">🐎</span><span class="game-name">競馬</span><br><span class="game-sub" style="margin-left:22px">レース投票</span></td>
+            <td class="text-right">¥1,200,000</td>
+            <td class="text-right">¥1,398,000</td>
+            <td class="text-right text-green">+¥198,000</td>
+            <td class="text-right">
+              <div>42.3%</div>
+              <div class="win-bar-wrap"><div class="win-bar"><div class="win-bar-fill" style="width:42%;background:var(--green)"></div></div></div>
+            </td>
+            <td class="text-right text-green">116.5%</td>
+          </tr>
+          <tr>
+            <td><span class="game-icon">🃏</span><span class="game-name">ポーカー</span><br><span class="game-sub" style="margin-left:22px">キャッシュゲーム</span></td>
+            <td class="text-right">¥480,000</td>
+            <td class="text-right">¥582,000</td>
+            <td class="text-right text-green">+¥102,000</td>
+            <td class="text-right">
+              <div>56.8%</div>
+              <div class="win-bar-wrap"><div class="win-bar"><div class="win-bar-fill" style="width:57%;background:var(--cyan)"></div></div></div>
+            </td>
+            <td class="text-right text-green">121.3%</td>
+          </tr>
+          <tr>
+            <td><span class="game-icon">⚽</span><span class="game-name">スポーツベット</span><br><span class="game-sub" style="margin-left:22px">サッカー・野球</span></td>
+            <td class="text-right">¥360,000</td>
+            <td class="text-right">¥374,400</td>
+            <td class="text-right text-green">+¥14,400</td>
+            <td class="text-right">
+              <div>51.2%</div>
+              <div class="win-bar-wrap"><div class="win-bar"><div class="win-bar-fill" style="width:51%;background:var(--yellow)"></div></div></div>
+            </td>
+            <td class="text-right text-yellow">104.0%</td>
+          </tr>
+          <tr>
+            <td><span class="game-icon">🎰</span><span class="game-name">パチンコ</span><br><span class="game-sub" style="margin-left:22px">スロット含む</span></td>
+            <td class="text-right">¥240,000</td>
+            <td class="text-right">¥219,600</td>
+            <td class="text-right text-red">-¥20,400</td>
+            <td class="text-right">
+              <div>38.5%</div>
+              <div class="win-bar-wrap"><div class="win-bar"><div class="win-bar-fill" style="width:39%;background:var(--red)"></div></div></div>
+            </td>
+            <td class="text-right text-red">91.5%</td>
+          </tr>
+          <tr>
+            <td><span class="game-icon">🎲</span><span class="game-name">カジノ</span><br><span class="game-sub" style="margin-left:22px">バカラ・ルーレット</span></td>
+            <td class="text-right">¥60,000</td>
+            <td class="text-right">¥24,500</td>
+            <td class="text-right text-red">-¥35,500</td>
+            <td class="text-right">
+              <div>28.0%</div>
+              <div class="win-bar-wrap"><div class="win-bar"><div class="win-bar-fill" style="width:28%;background:var(--red)"></div></div></div>
+            </td>
+            <td class="text-right text-red">40.8%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><div class="dot" style="background:var(--cyan)"></div>種目別投資割合 & ROI比較</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;height:260px">
+        <div class="chart-wrap" style="height:260px"><canvas id="pieChart"></canvas></div>
+        <div class="chart-wrap" style="height:260px"><canvas id="roiBar"></canvas></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ROW 4: Calendar Heatmap + Cumulative curve + Stats -->
+  <div class="section-title">日次カレンダー & 累積推移</div>
+  <div class="grid grid-3">
+
+    <div class="card">
+      <div class="card-title"><div class="dot" style="background:var(--green)"></div>月次収支カレンダー（2024年）</div>
+      <div id="calendarHeatmap"></div>
+      <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-sub)">
+          <div style="width:10px;height:10px;border-radius:2px;background:rgba(52,211,153,0.55)"></div>大勝
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-sub)">
+          <div style="width:10px;height:10px;border-radius:2px;background:rgba(52,211,153,0.25)"></div>プラス
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-sub)">
+          <div style="width:10px;height:10px;border-radius:2px;background:rgba(139,144,176,0.15)"></div>トントン
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-sub)">
+          <div style="width:10px;height:10px;border-radius:2px;background:rgba(248,113,113,0.2)"></div>マイナス
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-sub)">
+          <div style="width:10px;height:10px;border-radius:2px;background:rgba(248,113,113,0.5)"></div>大負け
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><div class="dot" style="background:var(--orange)"></div>累積収支推移</div>
+      <div class="chart-wrap" style="height:260px"><canvas id="cumulChart"></canvas></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><div class="dot" style="background:var(--text-sub)"></div>統計サマリー</div>
+      <div class="stat-list">
+        <div class="stat-item">
+          <span class="stat-item-label">総セッション数</span>
+          <span class="stat-item-value">187回</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-item-label">勝ちセッション</span>
+          <span class="stat-item-value text-green">98回（52.4%）</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-item-label">負けセッション</span>
+          <span class="stat-item-value text-red">76回（40.6%）</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-item-label">引き分け</span>
+          <span class="stat-item-value" style="color:var(--text-sub)">13回（7.0%）</span>
+        </div>
+        <div style="height:1px;background:var(--border);margin:4px 0"></div>
+        <div class="stat-item">
+          <span class="stat-item-label">最大連勝</span>
+          <span class="stat-item-value text-green">7連勝</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-item-label">最大連敗</span>
+          <span class="stat-item-value text-red">5連敗</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-item-label">平均投資/回</span>
+          <span class="stat-item-value">¥12,513</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-item-label">最大1回利益</span>
+          <span class="stat-item-value text-green">+¥98,000</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-item-label">最大1回損失</span>
+          <span class="stat-item-value text-red">-¥64,000</span>
+        </div>
+        <div style="height:1px;background:var(--border);margin:4px 0"></div>
+        <div class="stat-item">
+          <span class="stat-item-label">シャープレシオ</span>
+          <span class="stat-item-value" style="color:var(--cyan)">0.83</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-item-label">最大ドローダウン</span>
+          <span class="stat-item-value text-red">-¥142,000</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ROW 5: Recent Sessions + Distribution -->
+  <div class="section-title">最近のセッション & 分布</div>
+  <div class="grid grid-2-1">
+
+    <div class="card">
+      <div class="card-title"><div class="dot" style="background:var(--primary)"></div>直近セッション一覧</div>
+      <table class="sessions-table">
+        <thead>
+          <tr>
+            <th>日付</th>
+            <th>種目</th>
+            <th class="text-right">投資</th>
+            <th class="text-right">回収</th>
+            <th class="text-right">収支</th>
+            <th class="text-right">ROI</th>
+            <th>メモ</th>
+          </tr>
+        </thead>
+        <tbody id="sessionRows"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><div class="dot" style="background:var(--yellow)"></div>収支分布ヒストグラム</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="histChart"></canvas></div>
+      <div style="margin-top:14px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-sub);margin-bottom:6px">
+          <span>損失セッション 40.6%</span>
+          <span>利益セッション 52.4%</span>
+        </div>
+        <div style="height:6px;border-radius:3px;overflow:hidden;display:flex">
+          <div style="width:40.6%;background:var(--red);opacity:0.7"></div>
+          <div style="width:7%;background:var(--text-sub);opacity:0.3"></div>
+          <div style="width:52.4%;background:var(--green);opacity:0.7"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<footer>
+  デジタル庁「ダッシュボードデザインの実践ガイドブック」設計原則準拠 ／ サンプルデータ（架空）
+</footer>
+
+<script>
+// ===== COLOR PALETTE =====
+const C = {
+  primary: '#4f8ef7', green: '#34d399', red: '#f87171',
+  yellow: '#fbbf24', purple: '#a78bfa', cyan: '#22d3ee',
+  orange: '#fb923c', sub: '#8b90b0', bg: '#1a1d27', border: '#2e3247'
+};
+Chart.defaults.color = C.sub;
+Chart.defaults.borderColor = C.border;
+Chart.defaults.font.family = "'Hiragino Sans', 'Noto Sans JP', sans-serif";
+
+// ===== SPARKLINES =====
+function sparkline(id, data, color) {
+  new Chart(document.getElementById(id), {
+    type: 'line',
+    data: { labels: data.map((_, i) => i), datasets: [{ data, borderColor: color, borderWidth: 2, pointRadius: 0, fill: true, backgroundColor: color + '18', tension: 0.4 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } } }
+  });
+}
+sparkline('spark1', [180, 200, 185, 210, 195, 220, 215, 230, 218, 240, 234], C.primary);
+sparkline('spark2', [160, 195, 178, 235, 200, 248, 220, 245, 230, 265, 259.85], C.green);
+sparkline('spark3', [-20, -5, -7, 25, 5, 28, 5, 15, 12, 25, 25.85], C.green);
+sparkline('spark4', [88, 97, 96, 112, 102, 113, 102, 107, 105, 110, 111.1], C.yellow);
+
+// ===== MONTHLY P&L =====
+const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+const invest = [180,165,200,210,185,220,195,215,180,210,185,195];
+const recover = [158,170,224,198,192,251,200,228,190,225,178,184.5];
+const pl = recover.map((r, i) => Math.round(r - invest[i]));
+new Chart(document.getElementById('monthlyChart'), {
+  type: 'bar',
+  data: {
+    labels: months,
+    datasets: [
+      { label: '投資額', data: invest, backgroundColor: C.primary + '40', borderColor: C.primary, borderWidth: 1, borderRadius: 3, yAxisID: 'y' },
+      { label: '回収額', data: recover, backgroundColor: C.green + '40', borderColor: C.green, borderWidth: 1, borderRadius: 3, yAxisID: 'y' },
+      { label: '収支', data: pl, type: 'line', borderColor: C.yellow, borderWidth: 2, pointBackgroundColor: pl.map(v => v >= 0 ? C.green : C.red), pointRadius: 4, tension: 0.3, yAxisID: 'y2' }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { boxWidth: 12, font: { size: 11 } } } },
+    scales: {
+      y: { position: 'left', ticks: { callback: v => '¥' + v + 'k', font: { size: 10 } }, grid: { color: C.border } },
+      y2: { position: 'right', ticks: { callback: v => (v >= 0 ? '+' : '') + '¥' + v + 'k', font: { size: 10 } }, grid: { display: false } }
+    }
+  }
+});
+
+// ===== DONUT ROI =====
+new Chart(document.getElementById('donutROI'), {
+  type: 'doughnut',
+  data: { datasets: [{ data: [111.1, 18.9], backgroundColor: [C.yellow, C.border + '80'], borderWidth: 0, circumference: 270, rotation: 225 }] },
+  options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false }, tooltip: { enabled: false } }, cutout: '72%' }
+});
+
+// ===== PIE CHART =====
+new Chart(document.getElementById('pieChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['競馬', 'ポーカー', 'スポーツベット', 'パチンコ', 'カジノ'],
+    datasets: [{ data: [51.3, 20.5, 15.4, 10.3, 2.6], backgroundColor: [C.primary, C.cyan, C.yellow, C.purple, C.orange], borderWidth: 2, borderColor: C.bg }]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9 }, padding: 8 } } }, cutout: '55%' }
+});
+
+// ===== ROI BAR =====
+new Chart(document.getElementById('roiBar'), {
+  type: 'bar',
+  data: {
+    labels: ['競馬', 'ポーカー', 'スポーツ', 'パチンコ', 'カジノ'],
+    datasets: [{
+      data: [116.5, 121.3, 104.0, 91.5, 40.8],
+      backgroundColor: [C.green+'99', C.cyan+'99', C.yellow+'99', C.red+'99', C.red+'60'],
+      borderColor: [C.green, C.cyan, C.yellow, C.red, C.red],
+      borderWidth: 1, borderRadius: 4
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { min: 0, max: 140, ticks: { callback: v => v + '%', font: { size: 9 } }, grid: { color: C.border } },
+      y: { ticks: { font: { size: 10 } } }
+    }
+  }
+});
+
+// ===== CALENDAR HEATMAP (Month names) =====
+const calContainer = document.getElementById('calendarHeatmap');
+const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+// Generate pseudo monthly data
+const monthlyPL = [-22, 5, 24, -12, 7, 31, 5, 13, 10, 15, -7, -10.5];
+const calHTML = monthlyPL.map((v, i) => {
+  let cls = 'win';
+  if (v > 20) cls = 'big-win';
+  else if (v > 0) cls = 'win';
+  else if (v === 0) cls = 'break-even';
+  else if (v > -20) cls = 'loss';
+  else cls = 'big-loss';
+  const sign = v >= 0 ? '+' : '';
+  return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between">
+    <span style="font-size:12px;font-weight:600">${monthNames[i]}</span>
+    <span class="${cls}" style="border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700">${sign}¥${Math.abs(Math.round(v*1000)).toLocaleString()}</span>
+  </div>`;
+}).join('');
+calContainer.innerHTML = calHTML;
+
+// ===== CUMULATIVE CHART =====
+const cumul = [];
+let sum = 0;
+const dailyPL = [-5,3,-8,12,-2,15,4,-3,8,-6,20,-4,6,-9,18,2,-7,14,-1,10,
+  -12,5,25,-3,8,-5,16,-2,9,4,-8,13,-6,22,1,-4,17,-3,11,-7,
+  19,-1,6,-10,14,3,-6,20,-2,8,-5,24,-3,7,-11,15,4,-8,18,
+  -2,12,-6,21,1,-5,16,3,-9,14,-3,10,-7,23,-1,8,-12,17,2,
+  -6,19,-3,11,-8,20,4,-5,15,-2,9,-7,22,1,-4,18,3,-10,13,
+  -6,24,-2,7,-11,16,5,-8,21,-1,9,-5,20,3,-7,17,-3,12,-9,
+  25,4,-6,18,-2,10,-8,22,1,-5,19,-3,8,-12,16,5,-7,21,2,-4,
+  17,-3,11,-9,23,1,-6,20,4,-8,15,-2,10,-7,18,3,-5,22,0,-4,
+  17,-3,9,-11,24,2,-6,19,-1,8,-8,21,4,-5,16,-3,12,-9,25.85];
+dailyPL.forEach(v => { sum += v; cumul.push(Math.round(sum)); });
+
+new Chart(document.getElementById('cumulChart'), {
+  type: 'line',
+  data: {
+    labels: Array.from({length: dailyPL.length}, (_, i) => i + 1),
+    datasets: [{
+      data: cumul,
+      borderColor: C.orange,
+      borderWidth: 2,
+      pointRadius: 0,
+      tension: 0.3,
+      fill: true,
+      backgroundColor: (ctx) => {
+        const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, ctx.chart.height);
+        g.addColorStop(0, C.orange + '40');
+        g.addColorStop(1, C.orange + '00');
+        return g;
+      }
+    }, {
+      data: Array(dailyPL.length).fill(0),
+      borderColor: C.border,
+      borderWidth: 1,
+      borderDash: [4, 4],
+      pointRadius: 0
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { maxTicksLimit: 6, font: { size: 9 } }, grid: { display: false } },
+      y: { ticks: { callback: v => (v >= 0 ? '+' : '') + v + 'k', font: { size: 9 } }, grid: { color: C.border } }
+    }
+  }
+});
+
+// ===== SESSION ROWS =====
+const sessions = [
+  { date: '12/28', type: '競馬', tag: 'horse', invest: 35000, recover: 62000, note: '有馬記念 3連複的中' },
+  { date: '12/22', type: 'ポーカー', tag: 'poker', invest: 20000, recover: 15000, note: '6H セッション' },
+  { date: '12/15', type: 'スポーツ', tag: 'sports', invest: 15000, recover: 18500, note: 'Jリーグ最終節' },
+  { date: '12/08', type: 'パチンコ', tag: 'pachinko', invest: 10000, recover: 3500, note: 'スロット不調' },
+  { date: '12/01', type: '競馬', tag: 'horse', invest: 40000, recover: 58000, note: 'チャンピオンズC' },
+  { date: '11/24', type: 'ポーカー', tag: 'poker', invest: 25000, recover: 41000, note: 'トーナメント入賞' },
+  { date: '11/17', type: '競馬', tag: 'horse', invest: 30000, recover: 12000, note: 'マイルCS 外れ' },
+  { date: '11/10', type: 'カジノ', tag: 'casino', invest: 20000, recover: 8500, note: 'バカラ 3連敗' },
+];
+document.getElementById('sessionRows').innerHTML = sessions.map(s => {
+  const pl = s.recover - s.invest;
+  const roi = ((s.recover / s.invest) * 100).toFixed(1);
+  const plClass = pl > 0 ? 'text-green' : pl < 0 ? 'text-red' : '';
+  const plStr = (pl >= 0 ? '+' : '') + '¥' + Math.abs(pl).toLocaleString();
+  return `<tr>
+    <td style="color:var(--text-sub)">${s.date}</td>
+    <td><span class="tag tag-${s.tag}">${s.type}</span></td>
+    <td class="text-right">¥${s.invest.toLocaleString()}</td>
+    <td class="text-right">¥${s.recover.toLocaleString()}</td>
+    <td class="text-right ${plClass}">${plStr}</td>
+    <td class="text-right ${plClass}">${roi}%</td>
+    <td style="color:var(--text-sub);font-size:11px">${s.note}</td>
+  </tr>`;
+}).join('');
+
+// ===== HISTOGRAM =====
+const bins = ['<-50k','-50〜-30k','-30〜-10k','-10〜0k','0〜10k','10〜30k','30〜50k','>50k'];
+const binData = [5, 12, 28, 31, 42, 38, 20, 11];
+const binColors = binData.map((_, i) => i < 4 ? C.red + '99' : C.green + '99');
+new Chart(document.getElementById('histChart'), {
+  type: 'bar',
+  data: { labels: bins, datasets: [{ data: binData, backgroundColor: binColors, borderWidth: 0, borderRadius: 3 }] },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { font: { size: 9 }, maxRotation: 45 }, grid: { display: false } },
+      y: { ticks: { font: { size: 9 } }, grid: { color: C.border } }
+    }
+  }
+});
+</script>
+</body>
+</html>
