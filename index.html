@@ -3,266 +3,373 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ギャンブル収支管理ダッシュボード</title>
+  <title>Gamble Analytics — 収支管理ダッシュボード</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/tabler-icons.min.css">
   <style>
     :root {
-      --bg: #0f1117;
-      --surface: #1a1d27;
-      --surface2: #222535;
-      --border: #2e3247;
-      --text: #e8eaf6;
-      --text-sub: #8b90b0;
-      --primary: #4f8ef7;
-      --primary-light: #7ab3ff;
-      --green: #34d399;
-      --red: #f87171;
-      --yellow: #fbbf24;
-      --purple: #a78bfa;
-      --cyan: #22d3ee;
-      --orange: #fb923c;
+      --bg: #f4f6fa;
+      --surface: #ffffff;
+      --surface2: #f8f9fc;
+      --border: #e4e8f0;
+      --border2: #d0d7e8;
+      --text: #1a2035;
+      --text-sub: #6b7a99;
+      --text-light: #9aa3bb;
+      --primary: #3b6ff0;
+      --primary-light: #ebf0fd;
+      --primary-dark: #2952d9;
+      --green: #10b77f;
+      --green-light: #e6f8f2;
+      --red: #e8435a;
+      --red-light: #fdeef1;
+      --yellow: #f5a623;
+      --yellow-light: #fef6e7;
+      --purple: #7c5cfc;
+      --purple-light: #f0ecff;
+      --cyan: #0db0d6;
+      --cyan-light: #e6f7fc;
+      --orange: #f47c30;
+      --orange-light: #fef2ea;
+      --shadow-sm: 0 1px 3px rgba(26,32,53,0.06), 0 1px 2px rgba(26,32,53,0.04);
+      --shadow: 0 4px 16px rgba(26,32,53,0.08), 0 1px 4px rgba(26,32,53,0.04);
+      --shadow-md: 0 8px 32px rgba(26,32,53,0.10), 0 2px 8px rgba(26,32,53,0.06);
+      --radius: 12px;
+      --radius-sm: 8px;
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { margin:0; padding:0; box-sizing:border-box; }
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+      font-family: -apple-system, 'Hiragino Sans', 'Noto Sans JP', BlinkMacSystemFont, 'Segoe UI', sans-serif;
       font-size: 14px;
       min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* ---- HEADER ---- */
+    /* ===== HEADER ===== */
     header {
       background: var(--surface);
       border-bottom: 1px solid var(--border);
-      padding: 16px 24px;
+      padding: 0 24px;
+      height: 60px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: var(--shadow-sm);
     }
-    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
     .logo-icon {
-      width: 36px; height: 36px;
-      background: linear-gradient(135deg, var(--primary), var(--purple));
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
+      width:36px; height:36px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--purple) 100%);
+      border-radius:9px;
+      display:flex; align-items:center; justify-content:center;
+      box-shadow: 0 2px 8px rgba(59,111,240,0.35);
     }
-    .logo-text { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
-    .logo-sub { font-size: 11px; color: var(--text-sub); margin-top: 1px; }
-    .header-right { display: flex; align-items: center; gap: 16px; }
-    .period-badge {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 6px 14px;
-      font-size: 12px;
-      color: var(--text-sub);
+    .logo-icon svg { width:18px; height:18px; }
+    .logo-text { font-size:16px; font-weight:700; color:var(--text); letter-spacing:-0.3px; }
+    .logo-sub { font-size:10px; color:var(--text-sub); margin-top:1px; }
+    .header-center { display:flex; gap:4px; }
+    .nav-tab {
+      padding:6px 14px; border-radius:6px; font-size:12px; font-weight:500;
+      color:var(--text-sub); cursor:pointer; border:none; background:none;
+      transition: all .15s;
     }
-    .period-badge span { color: var(--text); font-weight: 600; }
-    .updated { font-size: 11px; color: var(--text-sub); }
+    .nav-tab.active { background:var(--primary-light); color:var(--primary); font-weight:600; }
+    .header-right { display:flex; align-items:center; gap:10px; }
+    .period-sel {
+      display:flex; align-items:center; gap:6px;
+      background:var(--surface2); border:1px solid var(--border);
+      border-radius:7px; padding:5px 12px; font-size:12px;
+      color:var(--text-sub); cursor:pointer;
+    }
+    .period-sel strong { color:var(--text); font-weight:600; }
+    .period-sel svg { width:13px; height:13px; }
+    .btn-export {
+      display:flex; align-items:center; gap:5px;
+      background:var(--primary); color:#fff;
+      border:none; border-radius:7px; padding:6px 14px;
+      font-size:12px; font-weight:600; cursor:pointer;
+      box-shadow: 0 2px 6px rgba(59,111,240,0.3);
+    }
+    .btn-export svg { width:13px; height:13px; }
 
-    /* ---- MAIN LAYOUT ---- */
-    main { padding: 24px; max-width: 1440px; margin: 0 auto; }
+    /* ===== MAIN ===== */
+    main { padding:24px; max-width:1480px; margin:0 auto; }
 
-    /* ---- GRID ---- */
-    .grid { display: grid; gap: 16px; }
-    .grid-4 { grid-template-columns: repeat(4, 1fr); }
-    .grid-3 { grid-template-columns: repeat(3, 1fr); }
-    .grid-2 { grid-template-columns: repeat(2, 1fr); }
-    .grid-3-1 { grid-template-columns: 3fr 1fr; }
-    .grid-2-1 { grid-template-columns: 2fr 1fr; }
+    /* ===== SECTION HEADER ===== */
+    .sec-head {
+      display:flex; align-items:center; justify-content:space-between;
+      margin:28px 0 14px;
+    }
+    .sec-title {
+      font-size:13px; font-weight:700; color:var(--text);
+      display:flex; align-items:center; gap:7px;
+    }
+    .sec-title svg { width:15px; height:15px; color:var(--text-sub); }
+    .sec-badge {
+      font-size:10px; font-weight:600; padding:2px 8px;
+      background:var(--primary-light); color:var(--primary);
+      border-radius:20px;
+    }
 
-    /* ---- CARD ---- */
+    /* ===== GRID ===== */
+    .grid { display:grid; gap:16px; }
+    .g4 { grid-template-columns:repeat(4,1fr); }
+    .g3 { grid-template-columns:repeat(3,1fr); }
+    .g2 { grid-template-columns:repeat(2,1fr); }
+    .g-3-1 { grid-template-columns:3fr 1fr; }
+    .g-2-1 { grid-template-columns:2fr 1fr; }
+    .g-1-2 { grid-template-columns:1fr 2fr; }
+
+    /* ===== CARD ===== */
     .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px;
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow-sm);
+      overflow:hidden;
+    }
+    .card-body { padding:20px; }
+    .card-head {
+      padding:16px 20px 0;
+      display:flex; align-items:center; justify-content:space-between;
     }
     .card-title {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: var(--text-sub);
-      margin-bottom: 14px;
-      display: flex; align-items: center; gap: 7px;
+      font-size:12px; font-weight:700;
+      color:var(--text-sub); letter-spacing:0.3px;
+      display:flex; align-items:center; gap:6px;
     }
-    .card-title .dot {
-      width: 6px; height: 6px; border-radius: 50%;
+    .card-title svg { width:14px; height:14px; flex-shrink:0; }
+    .card-more {
+      font-size:11px; color:var(--primary); font-weight:600;
+      display:flex; align-items:center; gap:2px; cursor:pointer;
     }
-    .card-title svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.8; }
+    .card-more svg { width:12px; height:12px; }
 
-    /* ---- KPI CARDS ---- */
-    .kpi { padding: 18px 20px; }
-    .kpi-label { font-size: 11px; color: var(--text-sub); margin-bottom: 8px; }
-    .kpi-value { font-size: 28px; font-weight: 700; letter-spacing: -1px; line-height: 1; }
-    .kpi-sub { margin-top: 8px; display: flex; align-items: center; gap: 6px; }
+    /* ===== KPI CARDS ===== */
+    .kpi-card {
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow-sm);
+      padding:20px;
+      position:relative; overflow:hidden;
+      transition:box-shadow .2s, transform .2s;
+    }
+    .kpi-card:hover { box-shadow:var(--shadow); transform:translateY(-1px); }
+    .kpi-card::before {
+      content:'';
+      position:absolute; top:0; left:0; right:0; height:3px;
+    }
+    .kpi-blue::before { background:linear-gradient(90deg, var(--primary), var(--cyan)); }
+    .kpi-green::before { background:linear-gradient(90deg, var(--green), #06d6a0); }
+    .kpi-yellow::before { background:linear-gradient(90deg, var(--yellow), var(--orange)); }
+    .kpi-purple::before { background:linear-gradient(90deg, var(--purple), var(--primary)); }
+
+    .kpi-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; }
+    .kpi-icon {
+      width:40px; height:40px; border-radius:10px;
+      display:flex; align-items:center; justify-content:center;
+      flex-shrink:0;
+    }
+    .kpi-icon svg { width:20px; height:20px; }
+    .kpi-icon-blue { background:var(--primary-light); color:var(--primary); }
+    .kpi-icon-green { background:var(--green-light); color:var(--green); }
+    .kpi-icon-yellow { background:var(--yellow-light); color:var(--yellow); }
+    .kpi-icon-purple { background:var(--purple-light); color:var(--purple); }
+
     .kpi-badge {
-      font-size: 11px; font-weight: 600;
-      padding: 2px 7px; border-radius: 4px;
+      font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px;
+      display:flex; align-items:center; gap:3px;
     }
-    .badge-up { background: rgba(52,211,153,0.15); color: var(--green); }
-    .badge-down { background: rgba(248,113,113,0.15); color: var(--red); }
-    .badge-neutral { background: rgba(139,144,176,0.15); color: var(--text-sub); }
-    .kpi-sub-text { font-size: 11px; color: var(--text-sub); }
+    .kpi-badge svg { width:10px; height:10px; }
+    .badge-up { background:var(--green-light); color:var(--green); }
+    .badge-down { background:var(--red-light); color:var(--red); }
+    .badge-neutral { background:var(--surface2); color:var(--text-sub); }
 
-    .kpi-positive .kpi-value { color: var(--green); }
-    .kpi-negative .kpi-value { color: var(--red); }
-    .kpi-primary .kpi-value { color: var(--primary-light); }
+    .kpi-label { font-size:12px; color:var(--text-sub); font-weight:500; margin-bottom:5px; }
+    .kpi-value { font-size:26px; font-weight:800; letter-spacing:-1px; color:var(--text); line-height:1.1; }
+    .kpi-value.green { color:var(--green); }
+    .kpi-value.yellow { color:var(--yellow); }
+    .kpi-footer { margin-top:12px; padding-top:12px; border-top:1px solid var(--border); display:flex; align-items:center; gap:6px; }
+    .kpi-footer-text { font-size:11px; color:var(--text-sub); }
+    .sparkline-wrap { height:36px; margin-top:10px; }
 
-    /* ---- SPARKLINE ---- */
-    .sparkline-wrap { height: 40px; margin-top: 10px; }
+    /* ===== ALERT BAR ===== */
+    .alert-bar {
+      background: linear-gradient(135deg, #ebf0fd 0%, #f0ecff 100%);
+      border: 1px solid #c8d5fb;
+      border-radius:var(--radius-sm);
+      padding:10px 16px;
+      display:flex; align-items:center; gap:10px;
+      margin-bottom:16px;
+    }
+    .alert-bar svg { width:16px; height:16px; color:var(--primary); flex-shrink:0; }
+    .alert-bar-text { font-size:12px; color:var(--primary-dark); }
+    .alert-bar-text strong { font-weight:700; }
 
-    /* ---- SECTION TITLE ---- */
-    .section-title {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-sub);
-      letter-spacing: 0.5px;
-      margin: 24px 0 12px;
-      padding-left: 2px;
-      display: flex; align-items: center; gap: 8px;
+    /* ===== CHART AREA ===== */
+    .chart-area { padding:16px 20px 20px; }
+    .chart-wrap { position:relative; }
+
+    /* ===== GAME TABLE ===== */
+    .gtable { width:100%; border-collapse:collapse; }
+    .gtable thead th {
+      font-size:10px; font-weight:700; color:var(--text-light);
+      letter-spacing:0.5px; text-transform:uppercase;
+      padding:8px 16px; background:var(--surface2);
+      border-bottom:1px solid var(--border); text-align:left;
     }
-    .section-title::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--border);
+    .gtable thead th:not(:first-child) { text-align:right; }
+    .gtable tbody td { padding:12px 16px; border-bottom:1px solid var(--border); font-size:13px; }
+    .gtable tbody tr:last-child td { border-bottom:none; }
+    .gtable tbody tr:hover td { background:var(--surface2); }
+    .game-cell { display:flex; align-items:center; gap:10px; }
+    .game-ico {
+      width:32px; height:32px; border-radius:8px;
+      display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    }
+    .game-ico svg { width:16px; height:16px; }
+    .game-name { font-weight:600; font-size:13px; color:var(--text); }
+    .game-sub { font-size:10px; color:var(--text-light); margin-top:1px; }
+    .tr { text-align:right; }
+    .val-green { color:var(--green); font-weight:700; }
+    .val-red { color:var(--red); font-weight:700; }
+    .val-yellow { color:var(--yellow); font-weight:700; }
+
+    /* ===== WINBAR ===== */
+    .winbar-wrap { min-width:70px; }
+    .winbar-num { font-size:12px; font-weight:600; color:var(--text); }
+    .winbar {
+      height:4px; border-radius:2px; background:var(--border);
+      margin-top:4px; overflow:hidden;
+    }
+    .winbar-fill { height:100%; border-radius:2px; }
+
+    /* ===== ROI PILL ===== */
+    .roi-pill {
+      display:inline-flex; align-items:center; gap:3px;
+      padding:3px 9px; border-radius:20px;
+      font-size:12px; font-weight:700;
     }
 
-    /* ---- CHART CONTAINER ---- */
-    .chart-wrap { position: relative; }
-    canvas { max-width: 100%; }
+    /* ===== STAT LIST ===== */
+    .stat-list { display:flex; flex-direction:column; }
+    .stat-item {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 20px; border-bottom:1px solid var(--border);
+    }
+    .stat-item:last-child { border-bottom:none; }
+    .stat-label { font-size:12px; color:var(--text-sub); display:flex; align-items:center; gap:6px; }
+    .stat-label svg { width:12px; height:12px; }
+    .stat-val { font-size:13px; font-weight:700; }
 
-    /* ---- ROI GAUGE ---- */
-    .gauge-wrap {
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      padding: 10px 0;
+    /* ===== CALENDAR ===== */
+    .cal-month { padding:8px 20px 16px; }
+    .cal-month-name { font-size:11px; font-weight:700; color:var(--text-sub); margin-bottom:6px; }
+    .cal-row { display:flex; gap:4px; }
+    .cal-cell {
+      flex:1; aspect-ratio:1; border-radius:5px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:10px; font-weight:700; cursor:default;
+      transition:transform .15s;
     }
-    .gauge-value { font-size: 36px; font-weight: 700; margin: 8px 0 4px; }
-    .gauge-label { font-size: 11px; color: var(--text-sub); }
-    .gauge-bar {
-      width: 100%; height: 8px;
-      background: var(--surface2);
-      border-radius: 4px;
-      margin-top: 12px;
-      overflow: hidden;
-    }
-    .gauge-fill {
-      height: 100%; border-radius: 4px;
-      background: linear-gradient(90deg, var(--red) 0%, var(--yellow) 50%, var(--green) 100%);
-    }
+    .cal-cell:hover { transform:scale(1.15); }
+    .c-win { background:var(--green-light); color:var(--green); }
+    .c-bigwin { background:var(--green); color:#fff; }
+    .c-loss { background:var(--red-light); color:var(--red); }
+    .c-bigloss { background:var(--red); color:#fff; }
+    .c-flat { background:var(--surface2); color:var(--text-light); border:1px solid var(--border); }
+    .c-empty { background:transparent; }
 
-    /* ---- GAME TABLE ---- */
-    .game-table { width: 100%; border-collapse: collapse; }
-    .game-table th {
-      text-align: left; font-size: 10px; font-weight: 600;
-      color: var(--text-sub); letter-spacing: 0.5px;
-      padding: 6px 10px; border-bottom: 1px solid var(--border);
+    /* ===== SESSION TABLE ===== */
+    .stab { width:100%; border-collapse:collapse; }
+    .stab thead th {
+      font-size:10px; font-weight:700; color:var(--text-light);
+      letter-spacing:0.5px; text-transform:uppercase;
+      padding:8px 16px; background:var(--surface2);
+      border-bottom:1px solid var(--border); text-align:left;
     }
-    .game-table td { padding: 9px 10px; border-bottom: 1px solid rgba(46,50,71,0.5); }
-    .game-table tr:last-child td { border-bottom: none; }
-    .game-icon { width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; margin-right: 8px; vertical-align: middle; flex-shrink: 0; }
-    .game-icon svg { display: block; }
-    .game-name { font-weight: 600; font-size: 13px; }
-    .game-sub { font-size: 10px; color: var(--text-sub); }
-    .text-right { text-align: right; }
-    .text-green { color: var(--green); font-weight: 600; }
-    .text-red { color: var(--red); font-weight: 600; }
-    .text-yellow { color: var(--yellow); font-weight: 600; }
+    .stab thead th:not(:first-child):not(:nth-child(2)):not(:last-child) { text-align:right; }
+    .stab tbody td { padding:11px 16px; border-bottom:1px solid var(--border); font-size:12px; }
+    .stab tbody tr:last-child td { border-bottom:none; }
+    .stab tbody tr:hover td { background:var(--surface2); }
 
-    /* ---- WIN RATE BAR ---- */
-    .win-bar-wrap { width: 80px; }
-    .win-bar {
-      height: 4px; border-radius: 2px;
-      background: var(--surface2); overflow: hidden; margin-top: 4px;
-    }
-    .win-bar-fill { height: 100%; border-radius: 2px; }
-
-    /* ---- CALENDAR HEATMAP ---- */
-    .cal-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 3px;
-      margin-top: 6px;
-    }
-    .cal-day {
-      aspect-ratio: 1;
-      border-radius: 3px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 9px; font-weight: 600;
-      cursor: default;
-    }
-    .cal-day.empty { background: transparent; }
-    .cal-day.win { background: rgba(52,211,153,0.25); color: var(--green); }
-    .cal-day.loss { background: rgba(248,113,113,0.2); color: var(--red); }
-    .cal-day.break-even { background: rgba(139,144,176,0.15); color: var(--text-sub); }
-    .cal-day.big-win { background: rgba(52,211,153,0.55); color: #fff; }
-    .cal-day.big-loss { background: rgba(248,113,113,0.5); color: #fff; }
-    .cal-day-label {
-      display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px;
-      margin-bottom: 3px;
-    }
-    .cal-day-label span { text-align: center; font-size: 9px; color: var(--text-sub); }
-
-    /* ---- STAT LIST ---- */
-    .stat-list { display: flex; flex-direction: column; gap: 12px; }
-    .stat-item { display: flex; align-items: center; justify-content: space-between; }
-    .stat-item-label { font-size: 12px; color: var(--text-sub); }
-    .stat-item-value { font-size: 13px; font-weight: 600; }
-
-    /* ---- SESSIONS TABLE ---- */
-    .sessions-table { width: 100%; border-collapse: collapse; }
-    .sessions-table th {
-      text-align: left; font-size: 10px; font-weight: 600;
-      color: var(--text-sub); letter-spacing: 0.5px;
-      padding: 6px 10px; border-bottom: 1px solid var(--border);
-    }
-    .sessions-table td { padding: 10px; border-bottom: 1px solid rgba(46,50,71,0.4); font-size: 12px; }
-    .sessions-table tr:last-child td { border-bottom: none; }
+    /* ===== TAG ===== */
     .tag {
-      font-size: 10px; font-weight: 600; padding: 3px 8px;
-      border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;
+      display:inline-flex; align-items:center; gap:4px;
+      padding:3px 9px; border-radius:20px;
+      font-size:10px; font-weight:700;
     }
-    .tag svg { width: 11px; height: 11px; flex-shrink: 0; }
-    .tag-horse { background: rgba(79,142,247,0.15); color: var(--primary-light); }
-    .tag-pachinko { background: rgba(167,139,250,0.15); color: var(--purple); }
-    .tag-casino { background: rgba(251,191,36,0.15); color: var(--yellow); }
-    .tag-sports { background: rgba(34,211,238,0.15); color: var(--cyan); }
-    .tag-poker { background: rgba(251,146,60,0.15); color: var(--orange); }
+    .tag svg { width:10px; height:10px; }
+    .tag-horse { background:var(--primary-light); color:var(--primary); }
+    .tag-poker { background:var(--orange-light); color:var(--orange); }
+    .tag-sports { background:var(--cyan-light); color:var(--cyan); }
+    .tag-pachinko { background:var(--purple-light); color:var(--purple); }
+    .tag-casino { background:var(--yellow-light); color:var(--yellow); }
 
-    /* ---- FOOTER ---- */
+    /* ===== GAUGE ===== */
+    .gauge-center { display:flex; flex-direction:column; align-items:center; padding:10px 20px 20px; }
+    .gauge-val { font-size:40px; font-weight:800; letter-spacing:-2px; color:var(--text); line-height:1; }
+    .gauge-val span { font-size:20px; font-weight:600; color:var(--text-sub); }
+    .gauge-desc { font-size:11px; color:var(--text-sub); margin-top:4px; margin-bottom:16px; }
+    .gauge-track { width:100%; height:8px; background:var(--border); border-radius:4px; overflow:hidden; }
+    .gauge-fill-bar {
+      height:100%; border-radius:4px;
+      background:linear-gradient(90deg, var(--red) 0%, var(--yellow) 45%, var(--green) 100%);
+    }
+    .gauge-labels { display:flex; justify-content:space-between; font-size:10px; color:var(--text-light); margin-top:4px; }
+
+    /* ===== PROGRESS ===== */
+    .prog-wrap { display:flex; flex-direction:column; gap:14px; padding:4px 0; }
+    .prog-item {}
+    .prog-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; }
+    .prog-label { font-size:12px; font-weight:600; color:var(--text); display:flex; align-items:center; gap:6px; }
+    .prog-label .dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .prog-meta { font-size:11px; color:var(--text-sub); }
+    .prog-bar { height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
+    .prog-bar-fill { height:100%; border-radius:3px; transition:width 1s; }
+
+    /* ===== FOOTER ===== */
     footer {
-      text-align: center; padding: 24px;
-      font-size: 11px; color: var(--text-sub);
-      border-top: 1px solid var(--border);
-      margin-top: 8px;
+      text-align:center; padding:20px 24px;
+      font-size:11px; color:var(--text-light);
+      border-top:1px solid var(--border);
+      margin-top:8px; background:var(--surface);
     }
 
-    /* ---- RESPONSIVE ---- */
-    @media (max-width: 1200px) {
-      .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    /* ===== RESPONSIVE ===== */
+    @media (max-width:1200px) {
+      .g4 { grid-template-columns:repeat(2,1fr); }
+      .g-3-1 { grid-template-columns:1fr; }
     }
-    @media (max-width: 768px) {
-      .grid-4, .grid-3, .grid-2, .grid-3-1, .grid-2-1 { grid-template-columns: 1fr; }
-      main { padding: 16px; }
+    @media (max-width:900px) {
+      .g3 { grid-template-columns:repeat(2,1fr); }
+      .g-2-1 { grid-template-columns:1fr; }
+      .g-1-2 { grid-template-columns:1fr; }
+      .header-center { display:none; }
+    }
+    @media (max-width:600px) {
+      main { padding:12px; }
+      .grid { gap:12px; }
+      .g4, .g3, .g2 { grid-template-columns:1fr; }
+      header { padding:0 14px; }
+      .logo-sub { display:none; }
+      .btn-export span { display:none; }
+      .kpi-value { font-size:22px; }
     }
   </style>
 </head>
 <body>
 
+<!-- ===== HEADER ===== -->
 <header>
   <div class="logo">
     <div class="logo-icon">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="9"/>
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/>
         <path d="M12 3v2M12 19v2M3 12h2M19 12h2"/>
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M12 9V7M12 17v-2M9 12H7M17 12h-2"/>
       </svg>
     </div>
     <div>
@@ -270,99 +377,179 @@
       <div class="logo-sub">個人収支管理ダッシュボード</div>
     </div>
   </div>
+  <div class="header-center">
+    <button class="nav-tab active">概要</button>
+    <button class="nav-tab">種目別</button>
+    <button class="nav-tab">履歴</button>
+    <button class="nav-tab">分析</button>
+  </div>
   <div class="header-right">
-    <div class="period-badge">集計期間 <span>2024年1月 〜 2024年12月</span></div>
-    <div class="updated">最終更新: 2024/12/31 23:59</div>
+    <div class="period-sel">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <strong>2024年</strong> 年間
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <button class="btn-export">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span>エクスポート</span>
+    </button>
   </div>
 </header>
 
 <main>
 
+  <!-- ALERT BAR -->
+  <div class="alert-bar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <div class="alert-bar-text">
+      <strong>3ヶ月連続黒字達成！</strong> 10月〜12月の累積収支 +¥52,400。競馬とポーカーが牽引中。パチンコ・カジノの改善が課題です。
+    </div>
+  </div>
+
   <!-- KPI ROW -->
-  <div class="grid grid-4" style="margin-bottom:0">
+  <div class="grid g4">
 
-    <div class="card kpi kpi-primary">
-      <div class="kpi-label" style="display:flex;align-items:center;gap:5px">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-sub)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-        総投資額
+    <div class="kpi-card kpi-blue">
+      <div class="kpi-header">
+        <div class="kpi-icon kpi-icon-blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <span class="kpi-badge badge-neutral">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          YTD
+        </span>
       </div>
+      <div class="kpi-label">総投資額</div>
       <div class="kpi-value">¥2,340,000</div>
-      <div class="kpi-sub">
-        <span class="kpi-badge badge-neutral">YTD</span>
-        <span class="kpi-sub-text">セッション数: 187回</span>
+      <div class="sparkline-wrap"><canvas id="sp1"></canvas></div>
+      <div class="kpi-footer">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        <span class="kpi-footer-text">セッション数 <strong style="color:var(--text)">187回</strong></span>
       </div>
-      <div class="sparkline-wrap"><canvas id="spark1"></canvas></div>
     </div>
 
-    <div class="card kpi kpi-positive">
-      <div class="kpi-label" style="display:flex;align-items:center;gap:5px">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-sub)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-        総回収額
+    <div class="kpi-card kpi-green">
+      <div class="kpi-header">
+        <div class="kpi-icon kpi-icon-green">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        </div>
+        <span class="kpi-badge badge-up">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+          +11.0%
+        </span>
       </div>
-      <div class="kpi-value">¥2,598,500</div>
-      <div class="kpi-sub">
-        <span class="kpi-badge badge-up">↑ +11.0%</span>
-        <span class="kpi-sub-text">vs 前年</span>
+      <div class="kpi-label">総回収額</div>
+      <div class="kpi-value green">¥2,598,500</div>
+      <div class="sparkline-wrap"><canvas id="sp2"></canvas></div>
+      <div class="kpi-footer">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span class="kpi-footer-text">対前年比 <strong style="color:var(--green)">+11.0%</strong></span>
       </div>
-      <div class="sparkline-wrap"><canvas id="spark2"></canvas></div>
     </div>
 
-    <div class="card kpi kpi-positive">
-      <div class="kpi-label" style="display:flex;align-items:center;gap:5px">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-sub)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        純利益
+    <div class="kpi-card kpi-yellow">
+      <div class="kpi-header">
+        <div class="kpi-icon kpi-icon-yellow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        </div>
+        <span class="kpi-badge badge-up">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+          黒字
+        </span>
       </div>
-      <div class="kpi-value">¥258,500</div>
-      <div class="kpi-sub">
-        <span class="kpi-badge badge-up">↑ +3回連続プラス月</span>
+      <div class="kpi-label">純利益</div>
+      <div class="kpi-value yellow">¥258,500</div>
+      <div class="sparkline-wrap"><canvas id="sp3"></canvas></div>
+      <div class="kpi-footer">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span class="kpi-footer-text">3ヶ月連続 <strong style="color:var(--yellow)">プラス継続中</strong></span>
       </div>
-      <div class="sparkline-wrap"><canvas id="spark3"></canvas></div>
     </div>
 
-    <div class="card kpi">
-      <div class="kpi-label" style="display:flex;align-items:center;gap:5px">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-sub)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
-        ROI（回収率）
+    <div class="kpi-card kpi-purple">
+      <div class="kpi-header">
+        <div class="kpi-icon kpi-icon-purple">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+        </div>
+        <span class="kpi-badge badge-up">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+          超過
+        </span>
       </div>
-      <div class="kpi-value" style="color: var(--yellow)">111.1%</div>
-      <div class="kpi-sub">
-        <span class="kpi-badge badge-up">↑ 黒字</span>
-        <span class="kpi-sub-text">目標: 105%超</span>
+      <div class="kpi-label">ROI（回収率）</div>
+      <div class="kpi-value" style="color:var(--purple)">111.1%</div>
+      <div class="sparkline-wrap"><canvas id="sp4"></canvas></div>
+      <div class="kpi-footer">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span class="kpi-footer-text">目標 <strong style="color:var(--text)">105%</strong> に対し <strong style="color:var(--green)">+6.1pt</strong></span>
       </div>
-      <div class="sparkline-wrap"><canvas id="spark4"></canvas></div>
     </div>
 
   </div>
 
-  <!-- ROW 2: Monthly P&L + ROI Gauge + Win Rate -->
-  <div class="section-title">月次推移 & 内訳</div>
-  <div class="grid grid-3-1">
+  <!-- ROW 2: Monthly chart + ROI gauge + Progress -->
+  <div class="sec-head">
+    <div class="sec-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      月次パフォーマンス
+    </div>
+    <span class="sec-badge">2024年 通年</span>
+  </div>
+  <div class="grid g-3-1">
 
     <div class="card">
-      <div class="card-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        月次収支推移（円）
+      <div class="card-head">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          月次収支推移
+        </div>
+        <div class="card-more">詳細
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
       </div>
-      <div class="chart-wrap" style="height:240px">
-        <canvas id="monthlyChart"></canvas>
+      <div class="chart-area">
+        <div class="chart-wrap" style="height:220px"><canvas id="monthlyChart"></canvas></div>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="var(--yellow)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>
-        年間ROI
+      <div class="card-head">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+          ROIゲージ
+        </div>
       </div>
-      <div class="gauge-wrap">
-        <canvas id="donutROI" width="160" height="160"></canvas>
-        <div class="gauge-value" style="color:var(--yellow)">111.1%</div>
-        <div class="gauge-label">回収率（100%以上 = 黒字）</div>
-        <div style="width:100%;margin-top:16px">
-          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-sub);margin-bottom:4px">
-            <span>80%</span><span>100%</span><span>130%</span>
+      <div class="gauge-center">
+        <canvas id="roiDonut" width="140" height="140"></canvas>
+        <div class="gauge-val">111.1<span>%</span></div>
+        <div class="gauge-desc">回収率（100%以上 = 黒字）</div>
+        <div class="gauge-track">
+          <div class="gauge-fill-bar" style="width:60%"></div>
+        </div>
+        <div class="gauge-labels"><span>80%</span><span>100%</span><span>130%+</span></div>
+      </div>
+      <div style="padding:0 20px 16px">
+        <div class="prog-wrap">
+          <div class="prog-item">
+            <div class="prog-head">
+              <div class="prog-label"><div class="dot" style="background:var(--green)"></div>勝ちセッション</div>
+              <div class="prog-meta">98回 / 52.4%</div>
+            </div>
+            <div class="prog-bar"><div class="prog-bar-fill" style="width:52.4%;background:var(--green)"></div></div>
           </div>
-          <div class="gauge-bar">
-            <div class="gauge-fill" style="width: 63%"></div>
+          <div class="prog-item">
+            <div class="prog-head">
+              <div class="prog-label"><div class="dot" style="background:var(--red)"></div>負けセッション</div>
+              <div class="prog-meta">76回 / 40.6%</div>
+            </div>
+            <div class="prog-bar"><div class="prog-bar-fill" style="width:40.6%;background:var(--red)"></div></div>
+          </div>
+          <div class="prog-item">
+            <div class="prog-head">
+              <div class="prog-label"><div class="dot" style="background:var(--border2)"></div>引き分け</div>
+              <div class="prog-meta">13回 / 7.0%</div>
+            </div>
+            <div class="prog-bar"><div class="prog-bar-fill" style="width:7%;background:var(--border2)"></div></div>
           </div>
         </div>
       </div>
@@ -370,258 +557,294 @@
 
   </div>
 
-  <!-- ROW 3: Game breakdown + Cumulative -->
-  <div class="section-title">種目別分析</div>
-  <div class="grid grid-2">
+  <!-- ROW 3: Game ranking + Breakdown charts -->
+  <div class="sec-head">
+    <div class="sec-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+      種目別分析
+    </div>
+    <span class="sec-badge">5種目</span>
+  </div>
+  <div class="grid g-1-2">
 
     <div class="card">
-      <div class="card-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
-        種目別収支ランキング
+      <div class="card-head">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+          投資配分 & ROI比較
+        </div>
       </div>
-      <table class="game-table">
+      <div class="chart-area">
+        <div style="height:180px"><canvas id="pieChart"></canvas></div>
+        <div style="height:160px;margin-top:12px"><canvas id="roiBar"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+          種目別収支ランキング
+        </div>
+      </div>
+      <table class="gtable">
         <thead>
           <tr>
             <th>種目</th>
-            <th class="text-right">投資額</th>
-            <th class="text-right">回収額</th>
-            <th class="text-right">収支</th>
-            <th class="text-right">勝率</th>
-            <th class="text-right">ROI</th>
+            <th class="tr">投資額</th>
+            <th class="tr">回収額</th>
+            <th class="tr">収支</th>
+            <th class="tr">勝率</th>
+            <th class="tr">ROI</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style="display:flex;align-items:center;padding:9px 10px">
-              <span class="game-icon" style="background:rgba(79,142,247,0.15)">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4f8ef7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c3-2 6-3 9-1s6 1 9-1"/><path d="M7 10c0-2 1.5-4 5-4s5 2 5 4v2c0 1-1 2-2 2h-6c-1 0-2-1-2-2v-2z"/><circle cx="9" cy="20" r="1"/><circle cx="15" cy="20" r="1"/></svg>
-              </span>
-              <div><div class="game-name">競馬</div><div class="game-sub">レース投票</div></div>
+            <td>
+              <div class="game-cell">
+                <div class="game-ico" style="background:var(--primary-light)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c3-2 6-3 9-1s6 1 9-1"/><path d="M7 10c0-2 1.5-4 5-4s5 2 5 4v2c0 1-1 2-2 2H9c-1 0-2-1-2-2v-2z"/><circle cx="9" cy="20" r="1"/><circle cx="15" cy="20" r="1"/></svg>
+                </div>
+                <div><div class="game-name">競馬</div><div class="game-sub">レース投票</div></div>
+              </div>
             </td>
-            <td class="text-right">¥1,200,000</td>
-            <td class="text-right">¥1,398,000</td>
-            <td class="text-right text-green">+¥198,000</td>
-            <td class="text-right">
-              <div>42.3%</div>
-              <div class="win-bar-wrap"><div class="win-bar"><div class="win-bar-fill" style="width:42%;background:var(--green)"></div></div></div>
+            <td class="tr">¥1,200,000</td>
+            <td class="tr">¥1,398,000</td>
+            <td class="tr val-green">+¥198,000</td>
+            <td class="tr">
+              <div class="winbar-wrap">
+                <div class="winbar-num">42.3%</div>
+                <div class="winbar"><div class="winbar-fill" style="width:42%;background:var(--green)"></div></div>
+              </div>
             </td>
-            <td class="text-right text-green">116.5%</td>
+            <td class="tr"><span class="roi-pill" style="background:var(--green-light);color:var(--green)">116.5%</span></td>
           </tr>
           <tr>
-            <td style="display:flex;align-items:center;padding:9px 10px">
-              <span class="game-icon" style="background:rgba(34,211,238,0.15)">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15V9l2 3 2-3v6"/><path d="M15 9h3M15 12h2M15 15h3"/></svg>
-              </span>
-              <div><div class="game-name">ポーカー</div><div class="game-sub">キャッシュゲーム</div></div>
+            <td>
+              <div class="game-cell">
+                <div class="game-ico" style="background:var(--orange-light)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15V9l2 3 2-3v6M15 9h3M15 12h2M15 15h3"/></svg>
+                </div>
+                <div><div class="game-name">ポーカー</div><div class="game-sub">キャッシュゲーム</div></div>
+              </div>
             </td>
-            <td class="text-right">¥480,000</td>
-            <td class="text-right">¥582,000</td>
-            <td class="text-right text-green">+¥102,000</td>
-            <td class="text-right">
-              <div>56.8%</div>
-              <div class="win-bar-wrap"><div class="win-bar"><div class="win-bar-fill" style="width:57%;background:var(--cyan)"></div></div></div>
+            <td class="tr">¥480,000</td>
+            <td class="tr">¥582,000</td>
+            <td class="tr val-green">+¥102,000</td>
+            <td class="tr">
+              <div class="winbar-wrap">
+                <div class="winbar-num">56.8%</div>
+                <div class="winbar"><div class="winbar-fill" style="width:57%;background:var(--cyan)"></div></div>
+              </div>
             </td>
-            <td class="text-right text-green">121.3%</td>
+            <td class="tr"><span class="roi-pill" style="background:var(--green-light);color:var(--green)">121.3%</span></td>
           </tr>
           <tr>
-            <td style="display:flex;align-items:center;padding:9px 10px">
-              <span class="game-icon" style="background:rgba(251,191,36,0.15)">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3c0 0-2 3-2 9s2 9 2 9"/><path d="M3 12h18"/><path d="M5.5 7h13M5.5 17h13"/></svg>
-              </span>
-              <div><div class="game-name">スポーツベット</div><div class="game-sub">サッカー・野球</div></div>
+            <td>
+              <div class="game-cell">
+                <div class="game-ico" style="background:var(--cyan-light)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3c0 0-2 3-2 9s2 9 2 9"/><path d="M3 12h18"/></svg>
+                </div>
+                <div><div class="game-name">スポーツベット</div><div class="game-sub">サッカー・野球</div></div>
+              </div>
             </td>
-            <td class="text-right">¥360,000</td>
-            <td class="text-right">¥374,400</td>
-            <td class="text-right text-green">+¥14,400</td>
-            <td class="text-right">
-              <div>51.2%</div>
-              <div class="win-bar-wrap"><div class="win-bar"><div class="win-bar-fill" style="width:51%;background:var(--yellow)"></div></div></div>
+            <td class="tr">¥360,000</td>
+            <td class="tr">¥374,400</td>
+            <td class="tr val-green">+¥14,400</td>
+            <td class="tr">
+              <div class="winbar-wrap">
+                <div class="winbar-num">51.2%</div>
+                <div class="winbar"><div class="winbar-fill" style="width:51%;background:var(--yellow)"></div></div>
+              </div>
             </td>
-            <td class="text-right text-yellow">104.0%</td>
+            <td class="tr"><span class="roi-pill" style="background:var(--yellow-light);color:var(--yellow)">104.0%</span></td>
           </tr>
           <tr>
-            <td style="display:flex;align-items:center;padding:9px 10px">
-              <span class="game-icon" style="background:rgba(167,139,250,0.15)">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><circle cx="15.5" cy="8.5" r="1.5"/><circle cx="8.5" cy="15.5" r="1.5"/><circle cx="15.5" cy="15.5" r="1.5"/><circle cx="12" cy="12" r="1.5"/></svg>
-              </span>
-              <div><div class="game-name">パチンコ</div><div class="game-sub">スロット含む</div></div>
+            <td>
+              <div class="game-cell">
+                <div class="game-ico" style="background:var(--purple-light)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><circle cx="15.5" cy="8.5" r="1.5"/><circle cx="8.5" cy="15.5" r="1.5"/><circle cx="15.5" cy="15.5" r="1.5"/><circle cx="12" cy="12" r="1.5"/></svg>
+                </div>
+                <div><div class="game-name">パチンコ</div><div class="game-sub">スロット含む</div></div>
+              </div>
             </td>
-            <td class="text-right">¥240,000</td>
-            <td class="text-right">¥219,600</td>
-            <td class="text-right text-red">-¥20,400</td>
-            <td class="text-right">
-              <div>38.5%</div>
-              <div class="win-bar-wrap"><div class="win-bar"><div class="win-bar-fill" style="width:39%;background:var(--red)"></div></div></div>
+            <td class="tr">¥240,000</td>
+            <td class="tr">¥219,600</td>
+            <td class="tr val-red">-¥20,400</td>
+            <td class="tr">
+              <div class="winbar-wrap">
+                <div class="winbar-num">38.5%</div>
+                <div class="winbar"><div class="winbar-fill" style="width:39%;background:var(--red)"></div></div>
+              </div>
             </td>
-            <td class="text-right text-red">91.5%</td>
+            <td class="tr"><span class="roi-pill" style="background:var(--red-light);color:var(--red)">91.5%</span></td>
           </tr>
           <tr>
-            <td style="display:flex;align-items:center;padding:9px 10px">
-              <span class="game-icon" style="background:rgba(251,146,60,0.15)">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-              </span>
-              <div><div class="game-name">カジノ</div><div class="game-sub">バカラ・ルーレット</div></div>
+            <td>
+              <div class="game-cell">
+                <div class="game-ico" style="background:var(--yellow-light)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="var(--yellow)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                </div>
+                <div><div class="game-name">カジノ</div><div class="game-sub">バカラ・ルーレット</div></div>
+              </div>
             </td>
-            <td class="text-right">¥60,000</td>
-            <td class="text-right">¥24,500</td>
-            <td class="text-right text-red">-¥35,500</td>
-            <td class="text-right">
-              <div>28.0%</div>
-              <div class="win-bar-wrap"><div class="win-bar"><div class="win-bar-fill" style="width:28%;background:var(--red)"></div></div></div>
+            <td class="tr">¥60,000</td>
+            <td class="tr">¥24,500</td>
+            <td class="tr val-red">-¥35,500</td>
+            <td class="tr">
+              <div class="winbar-wrap">
+                <div class="winbar-num">28.0%</div>
+                <div class="winbar"><div class="winbar-fill" style="width:28%;background:var(--red)"></div></div>
+              </div>
             </td>
-            <td class="text-right text-red">40.8%</td>
+            <td class="tr"><span class="roi-pill" style="background:var(--red-light);color:var(--red)">40.8%</span></td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <div class="card">
-      <div class="card-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
-        種目別投資割合 & ROI比較
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;height:260px">
-        <div class="chart-wrap" style="height:260px"><canvas id="pieChart"></canvas></div>
-        <div class="chart-wrap" style="height:260px"><canvas id="roiBar"></canvas></div>
-      </div>
-    </div>
-
   </div>
 
-  <!-- ROW 4: Calendar Heatmap + Cumulative curve + Stats -->
-  <div class="section-title">日次カレンダー & 累積推移</div>
-  <div class="grid grid-3">
+  <!-- ROW 4: Calendar + Cumulative + Stats -->
+  <div class="sec-head">
+    <div class="sec-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      カレンダー & 累積推移
+    </div>
+  </div>
+  <div class="grid g3">
 
     <div class="card">
-      <div class="card-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        月次収支カレンダー（2024年）
+      <div class="card-head">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          月次カレンダー
+        </div>
       </div>
-      <div id="calendarHeatmap"></div>
-      <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
-        <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-sub)">
-          <div style="width:10px;height:10px;border-radius:2px;background:rgba(52,211,153,0.55)"></div>大勝
-        </div>
-        <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-sub)">
-          <div style="width:10px;height:10px;border-radius:2px;background:rgba(52,211,153,0.25)"></div>プラス
-        </div>
-        <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-sub)">
-          <div style="width:10px;height:10px;border-radius:2px;background:rgba(139,144,176,0.15)"></div>トントン
-        </div>
-        <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-sub)">
-          <div style="width:10px;height:10px;border-radius:2px;background:rgba(248,113,113,0.2)"></div>マイナス
-        </div>
-        <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-sub)">
-          <div style="width:10px;height:10px;border-radius:2px;background:rgba(248,113,113,0.5)"></div>大負け
-        </div>
+      <div id="calWrap" style="padding:0 20px 16px"></div>
+      <div style="padding:0 20px 16px;display:flex;gap:10px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-sub)"><div style="width:10px;height:10px;border-radius:2px;background:var(--green)"></div>大勝</div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-sub)"><div style="width:10px;height:10px;border-radius:2px;background:var(--green-light);border:1px solid var(--green)"></div>プラス</div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-sub)"><div style="width:10px;height:10px;border-radius:2px;background:var(--border)"></div>収支ゼロ</div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-sub)"><div style="width:10px;height:10px;border-radius:2px;background:var(--red-light);border:1px solid var(--red)"></div>マイナス</div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-sub)"><div style="width:10px;height:10px;border-radius:2px;background:var(--red)"></div>大負け</div>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-        累積収支推移
+      <div class="card-head">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          累積収支推移
+        </div>
       </div>
-      <div class="chart-wrap" style="height:260px"><canvas id="cumulChart"></canvas></div>
+      <div class="chart-area">
+        <div class="chart-wrap" style="height:260px"><canvas id="cumulChart"></canvas></div>
+      </div>
     </div>
 
     <div class="card">
-      <div class="card-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-sub)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        統計サマリー
+      <div class="card-head">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-sub)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          統計サマリー
+        </div>
       </div>
       <div class="stat-list">
         <div class="stat-item">
-          <span class="stat-item-label">総セッション数</span>
-          <span class="stat-item-value">187回</span>
+          <div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>総セッション数</div>
+          <div class="stat-val">187回</div>
         </div>
         <div class="stat-item">
-          <span class="stat-item-label">勝ちセッション</span>
-          <span class="stat-item-value text-green">98回（52.4%）</span>
+          <div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>最大連勝</div>
+          <div class="stat-val" style="color:var(--green)">7連勝</div>
         </div>
         <div class="stat-item">
-          <span class="stat-item-label">負けセッション</span>
-          <span class="stat-item-value text-red">76回（40.6%）</span>
+          <div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>最大連敗</div>
+          <div class="stat-val" style="color:var(--red)">5連敗</div>
         </div>
         <div class="stat-item">
-          <span class="stat-item-label">引き分け</span>
-          <span class="stat-item-value" style="color:var(--text-sub)">13回（7.0%）</span>
-        </div>
-        <div style="height:1px;background:var(--border);margin:4px 0"></div>
-        <div class="stat-item">
-          <span class="stat-item-label">最大連勝</span>
-          <span class="stat-item-value text-green">7連勝</span>
+          <div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>平均投資/回</div>
+          <div class="stat-val">¥12,513</div>
         </div>
         <div class="stat-item">
-          <span class="stat-item-label">最大連敗</span>
-          <span class="stat-item-value text-red">5連敗</span>
+          <div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>最大1回利益</div>
+          <div class="stat-val" style="color:var(--green)">+¥98,000</div>
         </div>
         <div class="stat-item">
-          <span class="stat-item-label">平均投資/回</span>
-          <span class="stat-item-value">¥12,513</span>
+          <div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg>最大1回損失</div>
+          <div class="stat-val" style="color:var(--red)">-¥64,000</div>
         </div>
         <div class="stat-item">
-          <span class="stat-item-label">最大1回利益</span>
-          <span class="stat-item-value text-green">+¥98,000</span>
+          <div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>シャープレシオ</div>
+          <div class="stat-val" style="color:var(--cyan)">0.83</div>
         </div>
         <div class="stat-item">
-          <span class="stat-item-label">最大1回損失</span>
-          <span class="stat-item-value text-red">-¥64,000</span>
-        </div>
-        <div style="height:1px;background:var(--border);margin:4px 0"></div>
-        <div class="stat-item">
-          <span class="stat-item-label">シャープレシオ</span>
-          <span class="stat-item-value" style="color:var(--cyan)">0.83</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-item-label">最大ドローダウン</span>
-          <span class="stat-item-value text-red">-¥142,000</span>
+          <div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>最大DD</div>
+          <div class="stat-val" style="color:var(--red)">-¥142,000</div>
         </div>
       </div>
     </div>
 
   </div>
 
-  <!-- ROW 5: Recent Sessions + Distribution -->
-  <div class="section-title">最近のセッション & 分布</div>
-  <div class="grid grid-2-1">
+  <!-- ROW 5: Recent sessions + Histogram -->
+  <div class="sec-head">
+    <div class="sec-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      直近セッション & 分布
+    </div>
+  </div>
+  <div class="grid g-2-1">
 
     <div class="card">
-      <div class="card-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-        直近セッション一覧
+      <div class="card-head">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          直近セッション
+        </div>
+        <div class="card-more">全件
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
       </div>
-      <table class="sessions-table">
+      <table class="stab">
         <thead>
           <tr>
             <th>日付</th>
             <th>種目</th>
-            <th class="text-right">投資</th>
-            <th class="text-right">回収</th>
-            <th class="text-right">収支</th>
-            <th class="text-right">ROI</th>
+            <th class="tr">投資</th>
+            <th class="tr">回収</th>
+            <th class="tr">収支</th>
+            <th class="tr">ROI</th>
             <th>メモ</th>
           </tr>
         </thead>
-        <tbody id="sessionRows"></tbody>
+        <tbody id="sessRows"></tbody>
       </table>
     </div>
 
     <div class="card">
-      <div class="card-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="var(--yellow)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="13" width="4" height="9"/><rect x="9" y="9" width="4" height="13"/><rect x="16" y="5" width="4" height="17"/><line x1="1" y1="22" x2="23" y2="22"/></svg>
-        収支分布ヒストグラム
-      </div>
-      <div class="chart-wrap" style="height:220px"><canvas id="histChart"></canvas></div>
-      <div style="margin-top:14px">
-        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-sub);margin-bottom:6px">
-          <span>損失セッション 40.6%</span>
-          <span>利益セッション 52.4%</span>
+      <div class="card-head">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--yellow)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="13" width="4" height="9"/><rect x="9" y="9" width="4" height="13"/><rect x="16" y="5" width="4" height="17"/><line x1="1" y1="22" x2="23" y2="22"/></svg>
+          収支分布
         </div>
-        <div style="height:6px;border-radius:3px;overflow:hidden;display:flex">
-          <div style="width:40.6%;background:var(--red);opacity:0.7"></div>
-          <div style="width:7%;background:var(--text-sub);opacity:0.3"></div>
-          <div style="width:52.4%;background:var(--green);opacity:0.7"></div>
+      </div>
+      <div class="chart-area">
+        <div class="chart-wrap" style="height:200px"><canvas id="histChart"></canvas></div>
+        <div style="margin-top:12px;display:flex;gap:6px">
+          <div style="flex:1;background:var(--red-light);border-radius:6px;padding:8px;text-align:center">
+            <div style="font-size:18px;font-weight:800;color:var(--red)">40.6%</div>
+            <div style="font-size:10px;color:var(--text-sub);margin-top:2px">損失セッション</div>
+          </div>
+          <div style="flex:1;background:var(--surface2);border-radius:6px;padding:8px;text-align:center">
+            <div style="font-size:18px;font-weight:800;color:var(--text-sub)">7.0%</div>
+            <div style="font-size:10px;color:var(--text-sub);margin-top:2px">引き分け</div>
+          </div>
+          <div style="flex:1;background:var(--green-light);border-radius:6px;padding:8px;text-align:center">
+            <div style="font-size:18px;font-weight:800;color:var(--green)">52.4%</div>
+            <div style="font-size:10px;color:var(--text-sub);margin-top:2px">利益セッション</div>
+          </div>
         </div>
       </div>
     </div>
@@ -635,209 +858,176 @@
 </footer>
 
 <script>
-// ===== COLOR PALETTE =====
 const C = {
-  primary: '#4f8ef7', green: '#34d399', red: '#f87171',
-  yellow: '#fbbf24', purple: '#a78bfa', cyan: '#22d3ee',
-  orange: '#fb923c', sub: '#8b90b0', bg: '#1a1d27', border: '#2e3247'
+  primary:'#3b6ff0', green:'#10b77f', red:'#e8435a',
+  yellow:'#f5a623', purple:'#7c5cfc', cyan:'#0db0d6',
+  orange:'#f47c30', border:'#e4e8f0', text:'#1a2035', sub:'#6b7a99'
 };
 Chart.defaults.color = C.sub;
 Chart.defaults.borderColor = C.border;
-Chart.defaults.font.family = "'Hiragino Sans', 'Noto Sans JP', sans-serif";
+Chart.defaults.font.family = "-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif";
 
-// ===== SPARKLINES =====
-function sparkline(id, data, color) {
+// Sparklines
+function spark(id, data, color) {
   new Chart(document.getElementById(id), {
-    type: 'line',
-    data: { labels: data.map((_, i) => i), datasets: [{ data, borderColor: color, borderWidth: 2, pointRadius: 0, fill: true, backgroundColor: color + '18', tension: 0.4 }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } } }
+    type:'line',
+    data:{ labels:data.map((_,i)=>i), datasets:[{ data, borderColor:color, borderWidth:2, pointRadius:0, fill:true, backgroundColor:color+'18', tension:0.4 }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{enabled:false}}, scales:{x:{display:false},y:{display:false}} }
   });
 }
-sparkline('spark1', [180, 200, 185, 210, 195, 220, 215, 230, 218, 240, 234], C.primary);
-sparkline('spark2', [160, 195, 178, 235, 200, 248, 220, 245, 230, 265, 259.85], C.green);
-sparkline('spark3', [-20, -5, -7, 25, 5, 28, 5, 15, 12, 25, 25.85], C.green);
-sparkline('spark4', [88, 97, 96, 112, 102, 113, 102, 107, 105, 110, 111.1], C.yellow);
+spark('sp1',[180,200,185,210,195,220,215,230,218,240,234],C.primary);
+spark('sp2',[160,195,178,235,200,248,220,245,230,265,259.85],C.green);
+spark('sp3',[-20,-5,-7,25,5,28,5,15,12,25,25.85],C.yellow);
+spark('sp4',[88,97,96,112,102,113,102,107,105,110,111.1],C.purple);
 
-// ===== MONTHLY P&L =====
-const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
-const invest = [180,165,200,210,185,220,195,215,180,210,185,195];
-const recover = [158,170,224,198,192,251,200,228,190,225,178,184.5];
-const pl = recover.map((r, i) => Math.round(r - invest[i]));
-new Chart(document.getElementById('monthlyChart'), {
-  type: 'bar',
-  data: {
-    labels: months,
-    datasets: [
-      { label: '投資額', data: invest, backgroundColor: C.primary + '40', borderColor: C.primary, borderWidth: 1, borderRadius: 3, yAxisID: 'y' },
-      { label: '回収額', data: recover, backgroundColor: C.green + '40', borderColor: C.green, borderWidth: 1, borderRadius: 3, yAxisID: 'y' },
-      { label: '収支', data: pl, type: 'line', borderColor: C.yellow, borderWidth: 2, pointBackgroundColor: pl.map(v => v >= 0 ? C.green : C.red), pointRadius: 4, tension: 0.3, yAxisID: 'y2' }
+// Monthly chart
+const months=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+const inv=[180,165,200,210,185,220,195,215,180,210,185,195];
+const rec=[158,170,224,198,192,251,200,228,190,225,178,184.5];
+const pl=rec.map((r,i)=>Math.round(r-inv[i]));
+new Chart(document.getElementById('monthlyChart'),{
+  type:'bar',
+  data:{
+    labels:months,
+    datasets:[
+      {label:'投資額', data:inv, backgroundColor:C.primary+'25', borderColor:C.primary, borderWidth:1.5, borderRadius:4, yAxisID:'y'},
+      {label:'回収額', data:rec, backgroundColor:C.green+'25', borderColor:C.green, borderWidth:1.5, borderRadius:4, yAxisID:'y'},
+      {label:'収支', data:pl, type:'line', borderColor:C.orange, borderWidth:2.5, pointBackgroundColor:pl.map(v=>v>=0?C.green:C.red), pointBorderColor:'#fff', pointBorderWidth:2, pointRadius:5, tension:0.3, yAxisID:'y2'}
     ]
   },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { labels: { boxWidth: 12, font: { size: 11 } } } },
-    scales: {
-      y: { position: 'left', ticks: { callback: v => '¥' + v + 'k', font: { size: 10 } }, grid: { color: C.border } },
-      y2: { position: 'right', ticks: { callback: v => (v >= 0 ? '+' : '') + '¥' + v + 'k', font: { size: 10 } }, grid: { display: false } }
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{labels:{boxWidth:12,font:{size:11},padding:12}}},
+    scales:{
+      y:{position:'left', ticks:{callback:v=>'¥'+v+'k',font:{size:10}}, grid:{color:C.border}},
+      y2:{position:'right', ticks:{callback:v=>(v>=0?'+':'')+v+'k',font:{size:10}}, grid:{display:false}}
     }
   }
 });
 
-// ===== DONUT ROI =====
-new Chart(document.getElementById('donutROI'), {
-  type: 'doughnut',
-  data: { datasets: [{ data: [111.1, 18.9], backgroundColor: [C.yellow, C.border + '80'], borderWidth: 0, circumference: 270, rotation: 225 }] },
-  options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false }, tooltip: { enabled: false } }, cutout: '72%' }
+// ROI Donut
+new Chart(document.getElementById('roiDonut'),{
+  type:'doughnut',
+  data:{datasets:[{data:[111.1,18.9],backgroundColor:[C.purple,C.border],borderWidth:0,circumference:270,rotation:225}]},
+  options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false},tooltip:{enabled:false}},cutout:'72%'}
 });
 
-// ===== PIE CHART =====
-new Chart(document.getElementById('pieChart'), {
-  type: 'doughnut',
-  data: {
-    labels: ['競馬', 'ポーカー', 'スポーツベット', 'パチンコ', 'カジノ'],
-    datasets: [{ data: [51.3, 20.5, 15.4, 10.3, 2.6], backgroundColor: [C.primary, C.cyan, C.yellow, C.purple, C.orange], borderWidth: 2, borderColor: C.bg }]
+// Pie
+new Chart(document.getElementById('pieChart'),{
+  type:'doughnut',
+  data:{
+    labels:['競馬','ポーカー','スポーツ','パチンコ','カジノ'],
+    datasets:[{data:[51.3,20.5,15.4,10.3,2.6],backgroundColor:[C.primary,C.orange,C.cyan,C.purple,C.yellow],borderWidth:3,borderColor:'#fff'}]
   },
-  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9 }, padding: 8 } } }, cutout: '55%' }
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{boxWidth:10,font:{size:10},padding:8}}},cutout:'55%'}
 });
 
-// ===== ROI BAR =====
-new Chart(document.getElementById('roiBar'), {
-  type: 'bar',
-  data: {
-    labels: ['競馬', 'ポーカー', 'スポーツ', 'パチンコ', 'カジノ'],
-    datasets: [{
-      data: [116.5, 121.3, 104.0, 91.5, 40.8],
-      backgroundColor: [C.green+'99', C.cyan+'99', C.yellow+'99', C.red+'99', C.red+'60'],
-      borderColor: [C.green, C.cyan, C.yellow, C.red, C.red],
-      borderWidth: 1, borderRadius: 4
+// ROI Bar
+new Chart(document.getElementById('roiBar'),{
+  type:'bar',
+  data:{
+    labels:['競馬','ポーカー','スポーツ','パチンコ','カジノ'],
+    datasets:[{
+      data:[116.5,121.3,104.0,91.5,40.8],
+      backgroundColor:[C.green+'30',C.cyan+'30',C.yellow+'30',C.red+'30',C.red+'20'],
+      borderColor:[C.green,C.cyan,C.yellow,C.red,C.red],
+      borderWidth:1.5, borderRadius:4
     }]
   },
-  options: {
-    responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { min: 0, max: 140, ticks: { callback: v => v + '%', font: { size: 9 } }, grid: { color: C.border } },
-      y: { ticks: { font: { size: 10 } } }
+  options:{
+    responsive:true,maintainAspectRatio:false,indexAxis:'y',
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{min:0,max:140,ticks:{callback:v=>v+'%',font:{size:9}},grid:{color:C.border}},
+      y:{ticks:{font:{size:10}}}
     }
   }
 });
 
-// ===== CALENDAR HEATMAP (Month names) =====
-const calContainer = document.getElementById('calendarHeatmap');
-const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
-// Generate pseudo monthly data
-const monthlyPL = [-22, 5, 24, -12, 7, 31, 5, 13, 10, 15, -7, -10.5];
-const calHTML = monthlyPL.map((v, i) => {
-  let cls = 'win';
-  if (v > 20) cls = 'big-win';
-  else if (v > 0) cls = 'win';
-  else if (v === 0) cls = 'break-even';
-  else if (v > -20) cls = 'loss';
-  else cls = 'big-loss';
-  const sign = v >= 0 ? '+' : '';
-  return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between">
-    <span style="font-size:12px;font-weight:600">${monthNames[i]}</span>
-    <span class="${cls}" style="border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700">${sign}¥${Math.abs(Math.round(v*1000)).toLocaleString()}</span>
+// Calendar
+const monthlyPL=[-22,5,24,-12,7,31,5,13,10,15,-7,-10.5];
+const mnames=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+const calWrap=document.getElementById('calWrap');
+calWrap.innerHTML = monthlyPL.map((v,i)=>{
+  let cls='c-flat',display='±0';
+  if(v>20){cls='c-bigwin';display='+¥'+Math.round(v)+'k';}
+  else if(v>0){cls='c-win';display='+¥'+Math.round(v)+'k';}
+  else if(v<-20){cls='c-bigloss';display='-¥'+Math.abs(Math.round(v))+'k';}
+  else if(v<0){cls='c-loss';display='-¥'+Math.abs(Math.round(v))+'k';}
+  return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)">
+    <span style="font-size:12px;font-weight:600;color:var(--text-sub)">${mnames[i]}</span>
+    <span class="cal-cell ${cls}" style="aspect-ratio:unset;padding:3px 12px;font-size:12px">${display}</span>
   </div>`;
 }).join('');
-calContainer.innerHTML = calHTML;
 
-// ===== CUMULATIVE CHART =====
-const cumul = [];
-let sum = 0;
-const dailyPL = [-5,3,-8,12,-2,15,4,-3,8,-6,20,-4,6,-9,18,2,-7,14,-1,10,
-  -12,5,25,-3,8,-5,16,-2,9,4,-8,13,-6,22,1,-4,17,-3,11,-7,
-  19,-1,6,-10,14,3,-6,20,-2,8,-5,24,-3,7,-11,15,4,-8,18,
-  -2,12,-6,21,1,-5,16,3,-9,14,-3,10,-7,23,-1,8,-12,17,2,
-  -6,19,-3,11,-8,20,4,-5,15,-2,9,-7,22,1,-4,18,3,-10,13,
-  -6,24,-2,7,-11,16,5,-8,21,-1,9,-5,20,3,-7,17,-3,12,-9,
-  25,4,-6,18,-2,10,-8,22,1,-5,19,-3,8,-12,16,5,-7,21,2,-4,
-  17,-3,11,-9,23,1,-6,20,4,-8,15,-2,10,-7,18,3,-5,22,0,-4,
-  17,-3,9,-11,24,2,-6,19,-1,8,-8,21,4,-5,16,-3,12,-9,25.85];
-dailyPL.forEach(v => { sum += v; cumul.push(Math.round(sum)); });
-
-new Chart(document.getElementById('cumulChart'), {
-  type: 'line',
-  data: {
-    labels: Array.from({length: dailyPL.length}, (_, i) => i + 1),
-    datasets: [{
-      data: cumul,
-      borderColor: C.orange,
-      borderWidth: 2,
-      pointRadius: 0,
-      tension: 0.3,
-      fill: true,
-      backgroundColor: (ctx) => {
-        const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, ctx.chart.height);
-        g.addColorStop(0, C.orange + '40');
-        g.addColorStop(1, C.orange + '00');
-        return g;
-      }
-    }, {
-      data: Array(dailyPL.length).fill(0),
-      borderColor: C.border,
-      borderWidth: 1,
-      borderDash: [4, 4],
-      pointRadius: 0
-    }]
+// Cumulative
+let sum=0, cumul=[];
+const daily=[-5,3,-8,12,-2,15,4,-3,8,-6,20,-4,6,-9,18,2,-7,14,-1,10,-12,5,25,-3,8,-5,16,-2,9,4,-8,13,-6,22,1,-4,17,-3,11,-7,19,-1,6,-10,14,3,-6,20,-2,8,-5,24,-3,7,-11,15,4,-8,18,-2,12,-6,21,1,-5,16,3,-9,14,-3,10,-7,23,-1,8,-12,17,2,-6,19,-3,11,-8,20,4,-5,15,-2,9,-7,22,1,-4,18,3,-10,13,-6,24,-2,7,-11,16,5,-8,21,-1,9,-5,20,3,-7,17,-3,12,-9,25,4,-6,18,-2,10,-8,22,1,-5,19,-3,8,-12,16,5,-7,21,2,-4,17,-3,11,-9,23,1,-6,20,4,-8,15,-2,10,-7,18,3,-5,22,0,-4,17,-3,9,-11,24,2,-6,19,-1,8,-8,21,4,-5,16,-3,12,-9,25.85];
+daily.forEach(v=>{sum+=v;cumul.push(Math.round(sum));});
+new Chart(document.getElementById('cumulChart'),{
+  type:'line',
+  data:{
+    labels:Array.from({length:daily.length},(_,i)=>i+1),
+    datasets:[
+      {data:cumul,borderColor:C.orange,borderWidth:2.5,pointRadius:0,tension:0.3,fill:true,backgroundColor:C.orange+'18'},
+      {data:Array(daily.length).fill(0),borderColor:C.border,borderWidth:1,borderDash:[4,4],pointRadius:0}
+    ]
   },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { ticks: { maxTicksLimit: 6, font: { size: 9 } }, grid: { display: false } },
-      y: { ticks: { callback: v => (v >= 0 ? '+' : '') + v + 'k', font: { size: 9 } }, grid: { color: C.border } }
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{ticks:{maxTicksLimit:6,font:{size:9}},grid:{display:false}},
+      y:{ticks:{callback:v=>(v>=0?'+':'')+v+'k',font:{size:9}},grid:{color:C.border}}
     }
   }
 });
 
-// ===== SESSION ROWS =====
-const tagIcons = {
-  horse: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c3-2 6-3 9-1s6 1 9-1"/><path d="M7 10c0-2 1.5-4 5-4s5 2 5 4v2c0 1-1 2-2 2h-6c-1 0-2-1-2-2v-2z"/><circle cx="9" cy="20" r="1"/><circle cx="15" cy="20" r="1"/></svg>`,
-  poker: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15V9l2 3 2-3v6"/><path d="M15 9h3M15 12h2M15 15h3"/></svg>`,
-  sports: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3c0 0-2 3-2 9s2 9 2 9"/><path d="M3 12h18"/></svg>`,
-  pachinko: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><circle cx="15.5" cy="8.5" r="1.5"/><circle cx="12" cy="12" r="1.5"/></svg>`,
-  casino: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`,
+// Sessions
+const tagIcons={
+  horse:`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c3-2 6-3 9-1s6 1 9-1"/><path d="M7 10c0-2 1.5-4 5-4s5 2 5 4v2c0 1-1 2-2 2H9c-1 0-2-1-2-2v-2z"/><circle cx="9" cy="20" r="1"/><circle cx="15" cy="20" r="1"/></svg>`,
+  poker:`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15V9l2 3 2-3v6M15 9h3M15 12h2M15 15h3"/></svg>`,
+  sports:`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3c0 0-2 3-2 9s2 9 2 9"/><path d="M3 12h18"/></svg>`,
+  pachinko:`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="1.5"/></svg>`,
+  casino:`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>`,
 };
-const sessions = [
-  { date: '12/28', type: '競馬', tag: 'horse', invest: 35000, recover: 62000, note: '有馬記念 3連複的中' },
-  { date: '12/22', type: 'ポーカー', tag: 'poker', invest: 20000, recover: 15000, note: '6H セッション' },
-  { date: '12/15', type: 'スポーツ', tag: 'sports', invest: 15000, recover: 18500, note: 'Jリーグ最終節' },
-  { date: '12/08', type: 'パチンコ', tag: 'pachinko', invest: 10000, recover: 3500, note: 'スロット不調' },
-  { date: '12/01', type: '競馬', tag: 'horse', invest: 40000, recover: 58000, note: 'チャンピオンズC' },
-  { date: '11/24', type: 'ポーカー', tag: 'poker', invest: 25000, recover: 41000, note: 'トーナメント入賞' },
-  { date: '11/17', type: '競馬', tag: 'horse', invest: 30000, recover: 12000, note: 'マイルCS 外れ' },
-  { date: '11/10', type: 'カジノ', tag: 'casino', invest: 20000, recover: 8500, note: 'バカラ 3連敗' },
+const sessions=[
+  {date:'12/28',type:'競馬',tag:'horse',invest:35000,recover:62000,note:'有馬記念 3連複的中'},
+  {date:'12/22',type:'ポーカー',tag:'poker',invest:20000,recover:15000,note:'6Hセッション'},
+  {date:'12/15',type:'スポーツ',tag:'sports',invest:15000,recover:18500,note:'Jリーグ最終節'},
+  {date:'12/08',type:'パチンコ',tag:'pachinko',invest:10000,recover:3500,note:'スロット不調'},
+  {date:'12/01',type:'競馬',tag:'horse',invest:40000,recover:58000,note:'チャンピオンズC'},
+  {date:'11/24',type:'ポーカー',tag:'poker',invest:25000,recover:41000,note:'トーナメント入賞'},
+  {date:'11/17',type:'競馬',tag:'horse',invest:30000,recover:12000,note:'マイルCS 外れ'},
+  {date:'11/10',type:'カジノ',tag:'casino',invest:20000,recover:8500,note:'バカラ 3連敗'},
 ];
-document.getElementById('sessionRows').innerHTML = sessions.map(s => {
-  const pl = s.recover - s.invest;
-  const roi = ((s.recover / s.invest) * 100).toFixed(1);
-  const plClass = pl > 0 ? 'text-green' : pl < 0 ? 'text-red' : '';
-  const plStr = (pl >= 0 ? '+' : '') + '¥' + Math.abs(pl).toLocaleString();
+document.getElementById('sessRows').innerHTML=sessions.map(s=>{
+  const pl=s.recover-s.invest;
+  const roi=((s.recover/s.invest)*100).toFixed(1);
+  const pclass=pl>0?'val-green':pl<0?'val-red':'';
   return `<tr>
-    <td style="color:var(--text-sub)">${s.date}</td>
+    <td style="color:var(--text-sub);font-size:11px">${s.date}</td>
     <td><span class="tag tag-${s.tag}">${tagIcons[s.tag]}${s.type}</span></td>
-    <td class="text-right">¥${s.invest.toLocaleString()}</td>
-    <td class="text-right">¥${s.recover.toLocaleString()}</td>
-    <td class="text-right ${plClass}">${plStr}</td>
-    <td class="text-right ${plClass}">${roi}%</td>
+    <td class="tr">¥${s.invest.toLocaleString()}</td>
+    <td class="tr">¥${s.recover.toLocaleString()}</td>
+    <td class="tr ${pclass}">${(pl>=0?'+':'')+pl.toLocaleString()}</td>
+    <td class="tr ${pclass}">${roi}%</td>
     <td style="color:var(--text-sub);font-size:11px">${s.note}</td>
   </tr>`;
 }).join('');
 
-// ===== HISTOGRAM =====
-const bins = ['<-50k','-50〜-30k','-30〜-10k','-10〜0k','0〜10k','10〜30k','30〜50k','>50k'];
-const binData = [5, 12, 28, 31, 42, 38, 20, 11];
-const binColors = binData.map((_, i) => i < 4 ? C.red + '99' : C.green + '99');
-new Chart(document.getElementById('histChart'), {
-  type: 'bar',
-  data: { labels: bins, datasets: [{ data: binData, backgroundColor: binColors, borderWidth: 0, borderRadius: 3 }] },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { ticks: { font: { size: 9 }, maxRotation: 45 }, grid: { display: false } },
-      y: { ticks: { font: { size: 9 } }, grid: { color: C.border } }
+// Histogram
+const bins=['<-50k','-50〜-30k','-30〜-10k','-10〜0k','0〜10k','10〜30k','30〜50k','>50k'];
+const binData=[5,12,28,31,42,38,20,11];
+new Chart(document.getElementById('histChart'),{
+  type:'bar',
+  data:{labels:bins,datasets:[{data:binData,backgroundColor:binData.map((_,i)=>i<4?C.red+'40':C.green+'40'),borderColor:binData.map((_,i)=>i<4?C.red:C.green),borderWidth:1.5,borderRadius:4}]},
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{ticks:{font:{size:9},maxRotation:45},grid:{display:false}},
+      y:{ticks:{font:{size:9}},grid:{color:C.border}}
     }
   }
 });
